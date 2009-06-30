@@ -121,7 +121,7 @@ package body Symbex.Lex is
     return Class;
   end Categorize_Character;
 
-  procedure Consume_Characters
+  procedure Get_Token
     (Lexer     : in out Lexer_t;
      Item      : in     Wide_Character;
      Item_Next : in     Wide_Character;
@@ -271,6 +271,6 @@ package body Symbex.Lex is
     when Storage_Error =>
       Status := Lexer_Error_Out_Of_Memory;
       Token  := Invalid_Token;
-  end Consume_Characters;
+  end Get_Token;
 
 end Symbex.Lex;
