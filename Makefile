@@ -3,7 +3,7 @@
 default: all
 
 all:\
-symbex-lex.ali symbex-lex.o symbex.ali symbex.o
+symbex-lex.ali symbex-lex.o symbex.a symbex.ali symbex.o
 
 ada-bind:\
 conf-adabind conf-systype conf-adatype conf-adabflags
@@ -74,6 +74,10 @@ ada-compile symbex-lex.adb symbex.ali symbex-lex.ads
 symbex-lex.o:\
 symbex-lex.ali
 
+symbex.a:\
+cc-slib symbex.sld symbex.o symbex-lex.o
+	./cc-slib symbex symbex.o symbex-lex.o
+
 symbex.ali:\
 ada-compile symbex.ads symbex.ads
 	./ada-compile symbex.ads
@@ -84,7 +88,7 @@ symbex.ali
 clean-all: obj_clean ext_clean
 clean: obj_clean
 obj_clean:
-	rm -f symbex-lex.ali symbex-lex.o symbex.ali symbex.o
+	rm -f symbex-lex.ali symbex-lex.o symbex.a symbex.ali symbex.o
 ext_clean:
 	rm -f conf-adatype conf-cctype conf-ldtype conf-systype mk-ctxt
 
