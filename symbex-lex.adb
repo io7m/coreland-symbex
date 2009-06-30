@@ -159,21 +159,28 @@ package body Symbex.Lex is
         if State_Is_Set (Lexer, Inside_Comment) then
           Unset_State (Lexer, Inside_Comment);
         else
-          Lexer.Current_Line := Lexer.Current_Line + 1;
-          if State_Is_Set (Lexer, Inside_Escape) then
-            Unset_State (Lexer, Inside_Escape);
-          end if;
-          if State_Is_Set (Lexer, Inside_String) then
-            Append_To_Token (Lexer, Item);
-          else
-            if Token_Is_Nonzero_Length (Lexer) then
-              Status := Lexer_OK;
-              Complete_Token
-                (Lexer => Lexer,
-                 Token => Token,
-                 Kind  => Token_Symbol);
+          begin
+            Lexer.Current_Line := Lexer.Current_Line + 1;
+
+            if State_Is_Set (Lexer, Inside_Escape) then
+              Unset_State (Lexer, Inside_Escape);
             end if;
-          end if;
+            if State_Is_Set (Lexer, Inside_String) then
+              Append_To_Token (Lexer, Item);
+            else
+              if Token_Is_Nonzero_Length (Lexer) then
+                Status := Lexer_OK;
+                Complete_Token
+                  (Lexer => Lexer,
+                   Token => Token,
+                   Kind  => Token_Symbol);
+              end if;
+            end if;
+          exception
+            when Constraint_Error =>
+              Status := Lexer_Error_Line_Overflow;
+              Token  := Invalid_Token;
+          end;
         end if;
 
       when List_Open_Delimiter =>
@@ -181,10 +188,10 @@ package body Symbex.Lex is
           Append_To_Token (Lexer, Item);
           if not State_Is_Set (Lexer, Inside_String) then
             Status := Lexer_OK;
-              Complete_Token
-                (Lexer => Lexer,
-                 Token => Token,
-                  Kind => Token_List_Open);
+            Complete_Token
+              (Lexer => Lexer,
+               Token => Token,
+                Kind => Token_List_Open);
           end if;
         end if;
 
@@ -258,6 +265,11 @@ package body Symbex.Lex is
           end case;
         end if;
     end case;
+
+  exception
+    when Storage_Error =>
+      Status := Lexer_Error_Out_Of_Memory;
+      Token  := Invalid_Token;
   end Consume_Characters;
 
 end Symbex.Lex;

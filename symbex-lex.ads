@@ -14,14 +14,15 @@ package Symbex.Lex is
   type Lexer_Status_t is
     (Lexer_OK,
      Lexer_Needs_More_Data,
-     Lexer_Error);
+     Lexer_Error_Line_Overflow,
+     Lexer_Error_Out_Of_Memory);
 
   --
   -- Status values corresponding to error conditions.
   --
 
   subtype Lexer_Error_Status_t is Lexer_Status_t
-    range Lexer_Error .. Lexer_Error;
+    range Lexer_Error_Line_Overflow .. Lexer_Error_Out_Of_Memory;
 
   --
   -- Lexer is initialized?
