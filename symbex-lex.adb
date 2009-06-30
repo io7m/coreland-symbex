@@ -160,6 +160,7 @@ package body Symbex.Lex is
           Unset_State (Lexer, Inside_Comment);
         else
           begin
+            -- Potential overflow.
             Lexer.Current_Line := Lexer.Current_Line + 1;
 
             if State_Is_Set (Lexer, Inside_Escape) then
