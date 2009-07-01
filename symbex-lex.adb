@@ -3,54 +3,9 @@ with Ada.Wide_Characters.Unicode; -- GNAT Specific.
 package body Symbex.Lex is
   package Unicode renames Ada.Wide_Characters.Unicode;
 
-  procedure Set_State
-    (Lexer : in out Lexer_t;
-     State : in     State_Stage_t);
-  pragma Precondition (not Lexer.State (State));
-  pragma Postcondition (Lexer.State (State));
-
-  procedure Unset_State
-    (Lexer : in out Lexer_t;
-     State : in     State_Stage_t);
-  pragma Precondition (Lexer.State (State));
-  pragma Postcondition (not Lexer.State (State));
-
-  function State_Is_Set
-    (Lexer : in Lexer_t;
-     State : in State_Stage_t) return Boolean;
-
-  function Token_Is_Nonzero_Length
-    (Lexer : in Lexer_t) return Boolean;
-
-  procedure Complete_Token
-    (Lexer : in out Lexer_t;
-     Kind  : in     Token_Kind_t;
-     Token :    out Token_t);
-  pragma Precondition (Token_Is_Nonzero_Length (Lexer));
-  pragma Postcondition
-    ((Token /= Invalid_Token) and (not Token_Is_Nonzero_Length (Lexer)));
-
   --
-  -- Implementations.
+  -- Private subprograms.
   --
-
-  function Initialized (Lexer : in Lexer_t) return Boolean is
-  begin
-    return Lexer.Inited;
-  end Initialized;
-
-  procedure Initialize_Lexer
-    (Lexer  :    out Lexer_t;
-     Status :    out Lexer_Status_t) is
-  begin
-    Lexer := Lexer_t'
-      (Inited       => True,
-       Current_Line => Line_Number_t'First,
-       Token_Buffer => UBW_Strings.Null_Unbounded_Wide_String,
-       Input_Buffer => Input_Buffer_t'(others => Wide_Character'Val (0)),
-       State        => State_t'(others => False));
-    Status       := Lexer_OK;
-  end Initialize_Lexer;
 
   procedure Append_To_Token
     (Lexer : in out Lexer_t;
@@ -121,6 +76,28 @@ package body Symbex.Lex is
     end case;
     return Class;
   end Categorize_Character;
+
+  --
+  -- Public API.
+  --
+
+  function Initialized (Lexer : in Lexer_t) return Boolean is
+  begin
+    return Lexer.Inited;
+  end Initialized;
+
+  procedure Initialize_Lexer
+    (Lexer  :    out Lexer_t;
+     Status :    out Lexer_Status_t) is
+  begin
+    Lexer := Lexer_t'
+      (Inited       => True,
+       Current_Line => Line_Number_t'First,
+       Token_Buffer => UBW_Strings.Null_Unbounded_Wide_String,
+       Input_Buffer => Input_Buffer_t'(others => Wide_Character'Val (0)),
+       State        => State_t'(others => False));
+    Status       := Lexer_OK;
+  end Initialize_Lexer;
 
   procedure Get_Token
     (Lexer     : in out Lexer_t;
@@ -216,7 +193,6 @@ package body Symbex.Lex is
             Set_State (Lexer, Inside_Comment);
           end if;
         end if;
-
       when Escape_Character =>
         if not State_Is_Set (Lexer, Inside_Comment) then
           if State_Is_Set (Lexer, Inside_String) then
@@ -228,7 +204,6 @@ package body Symbex.Lex is
             end if;
           end if;
         end if;
-
       when Line_Break =>
         if State_Is_Set (Lexer, Inside_Comment) then
           Unset_State (Lexer, Inside_Comment);
@@ -257,7 +232,6 @@ package body Symbex.Lex is
               Token  := Invalid_Token;
           end;
         end if;
-
       when List_Open_Delimiter =>
         if not State_Is_Set (Lexer, Inside_Comment) then
           Append_To_Token (Lexer, Item);
@@ -269,7 +243,6 @@ package body Symbex.Lex is
                 Kind => Token_List_Open);
           end if;
         end if;
-
       when List_Close_Delimiter =>
         if not State_Is_Set (Lexer, Inside_Comment) then
           Append_To_Token (Lexer, Item);
@@ -281,7 +254,6 @@ package body Symbex.Lex is
                Kind  => Token_List_Close);
           end if;
         end if;
-
       when String_Delimiter =>
         if not State_Is_Set (Lexer, Inside_Comment) then
           if State_Is_Set (Lexer, Inside_String) then
@@ -300,7 +272,6 @@ package body Symbex.Lex is
             Set_State (Lexer, Inside_String);
           end if;
         end if;
-
       when Whitespace =>
         if not State_Is_Set (Lexer, Inside_Comment) then
           if State_Is_Set (Lexer, Inside_Escape) then
@@ -318,7 +289,6 @@ package body Symbex.Lex is
             end if;
           end if;
         end if;
-
       when Ordinary_Text =>
         if not State_Is_Set (Lexer, Inside_Comment) then
           if State_Is_Set (Lexer, Inside_Escape) then
@@ -328,7 +298,7 @@ package body Symbex.Lex is
 
           -- End of token if not inside a string.
           case Categorize_Character (Item_Next) is
-            when List_Open_Delimiter  | List_Close_Delimiter | String_Delimiter =>
+            when List_Open_Delimiter | List_Close_Delimiter | String_Delimiter =>
               if State_Is_Set (Lexer, Inside_String) then
                 Status := Lexer_OK;
                 Complete_Token
@@ -340,7 +310,6 @@ package body Symbex.Lex is
           end case;
         end if;
     end case;
-
   exception
     when Storage_Error =>
       Status := Lexer_Error_Out_Of_Memory;
