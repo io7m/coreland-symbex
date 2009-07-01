@@ -1,11 +1,15 @@
+with Ada.Exceptions;
+with Ada.Text_IO;
 with Ada.Wide_Text_IO;
 with Ada.Wide_Text_IO.Wide_Unbounded_IO;
 with Symbex.Lex;
 
 procedure Lexer is
-  package WIO  renames Ada.Wide_Text_IO;
-  package WUIO renames Ada.Wide_Text_IO.Wide_Unbounded_IO;
-  package Lex  renames Symbex.Lex;
+  package Exceptions renames Ada.Exceptions;
+  package IO         renames Ada.Text_IO;
+  package Lex        renames Symbex.Lex;
+  package WIO        renames Ada.Wide_Text_IO;
+  package WUIO       renames Ada.Wide_Text_IO.Wide_Unbounded_IO;
 
   use type Lex.Lexer_t;
   use type Lex.Lexer_Status_t;
@@ -16,6 +20,8 @@ procedure Lexer is
   Lexer_State : Lex.Lexer_t;
   Status      : Lex.Lexer_Status_t;
   Token       : Lex.Token_t;
+
+  Failure     : exception;
 begin
   Done      := False;
   Status    := Lex.Lexer_OK;
@@ -26,9 +32,13 @@ begin
   pragma Assert (Status = Lex.Lexer_OK);
 
   -- Read initial character.
-  WIO.Get_Immediate
-    (File => WIO.Current_Input,
-     Item => Item_Next);
+  begin
+    WIO.Get_Immediate
+      (File => WIO.Current_Input,
+       Item => Item_Next);
+  exception
+    when WIO.End_Error => Done := True;
+  end;
 
   loop exit when Done;
     begin
@@ -45,7 +55,7 @@ begin
          Token     => Token,
          Status    => Status);
       if Status in Lex.Lexer_Error_Status_t then
-        raise Program_Error with Lex.Lexer_Error_Status_t'Image (Status);
+        raise Failure with Lex.Lexer_Error_Status_t'Image (Status);
       else
         if Status = Lex.Lexer_OK then
           WIO.Put
@@ -60,7 +70,14 @@ begin
         end if;
       end if;
     exception
-      when WIO.End_Error => Done := True;
+      when WIO.End_Error =>
+        if Status = Lex.Lexer_Needs_More_Data then
+          raise Failure with Lex.Lexer_Error_Status_t'Image (Status);
+        end if;
+        Done := True;
     end;
   end loop;
+
+exception
+  when E : Failure => IO.Put_Line ("error: " & Exceptions.Exception_Message (E));
 end Lexer;
