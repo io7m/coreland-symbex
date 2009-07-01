@@ -144,7 +144,9 @@ package body Symbex.Lex is
           (Item   => Lexer.Input_Buffer (Next),
            Status => Status);
         case Status is
-          when Stream_EOF   => Lexer.Input_Buffer (Next) := Null_Item;
+          when Stream_EOF   =>
+            Lexer.Input_Buffer (Next) := Null_Item;
+            Status                    := Stream_OK;
           when Stream_Error => null;
           when Stream_OK    => null;
         end case;

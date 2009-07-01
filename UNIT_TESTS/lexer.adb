@@ -11,8 +11,9 @@ procedure Lexer is
   package WIO        renames Ada.Wide_Text_IO;
   package WUIO       renames Ada.Wide_Text_IO.Wide_Unbounded_IO;
 
-  use type Lex.Lexer_t;
   use type Lex.Lexer_Status_t;
+  use type Lex.Lexer_t;
+  use type Lex.Token_Kind_t;
 
   Done        : Boolean;
   Lexer_State : Lex.Lexer_t;
@@ -53,33 +54,28 @@ begin
   pragma Assert (Status = Lex.Lexer_OK);
 
   loop exit when Done;
-    begin
-      Get_Token
-        (Lexer     => Lexer_State,
-         Token     => Token,
-         Status    => Status);
-      if Status in Lex.Lexer_Error_Status_t then
-        raise Failure with Lex.Lexer_Error_Status_t'Image (Status);
-      else
-        if Status = Lex.Lexer_OK then
-          WIO.Put
-            (File => WIO.Current_Output,
-             Item => Lex.Token_Kind_t'Wide_Image (Token.Kind));
-          WIO.Put
-            (File => WIO.Current_Output,
-             Item => ":");
-          WUIO.Put_Line
-            (File => WIO.Current_Output,
-             Item => Token.Text);
+    Get_Token
+      (Lexer     => Lexer_State,
+       Token     => Token,
+       Status    => Status);
+    if Status in Lex.Lexer_Error_Status_t then
+      raise Failure with Lex.Lexer_Error_Status_t'Image (Status);
+    else
+      if Status = Lex.Lexer_OK then
+        WIO.Put
+          (File => WIO.Current_Output,
+           Item => Lex.Token_Kind_t'Wide_Image (Token.Kind));
+        WIO.Put
+          (File => WIO.Current_Output,
+           Item => ":");
+        WUIO.Put_Line
+          (File => WIO.Current_Output,
+           Item => Token.Text);
+        if Token.Kind = Lex.Token_EOF then
+          Done := True;
         end if;
       end if;
-    exception
-      when WIO.End_Error =>
-        if Status = Lex.Lexer_Needs_More_Data then
-          raise Failure with Lex.Lexer_Error_Status_t'Image (Status);
-        end if;
-        Done := True;
-    end;
+    end if;
   end loop;
 
 exception
