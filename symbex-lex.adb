@@ -47,6 +47,7 @@ package body Symbex.Lex is
       (Inited       => True,
        Current_Line => Line_Number_t'First,
        Token_Buffer => UBW_Strings.Null_Unbounded_Wide_String,
+       Input_Buffer => Input_Buffer_t'(others => Wide_Character'Val (0)),
        State        => State_t'(others => False));
     Status       := Lexer_OK;
   end Initialize_Lexer;
@@ -123,15 +124,86 @@ package body Symbex.Lex is
 
   procedure Get_Token
     (Lexer     : in out Lexer_t;
-     Item      : in     Wide_Character;
-     Item_Next : in     Wide_Character;
      Token     :    out Token_t;
-     Status    :    out Lexer_Status_t) is
+     Status    :    out Lexer_Status_t)
+  is
+    --
+    -- Stream characters via Read_Item.
+    --
+    procedure Fetch_Characters
+      (Lexer     : in out Lexer_t;
+       Item      :    out Wide_Character;
+       Item_Next :    out Wide_Character;
+       Status    :    out Stream_Status_t)
+    is
+      Null_Item : constant Wide_Character := Wide_Character'Val (0);
+    begin
+      if Lexer.Input_Buffer (Next) /= Null_Item then
+        Lexer.Input_Buffer (Current) := Lexer.Input_Buffer (Next);
+        Read_Item
+          (Item   => Lexer.Input_Buffer (Next),
+           Status => Status);
+        case Status is
+          when Stream_EOF   => Lexer.Input_Buffer (Next) := Null_Item;
+          when Stream_Error => null;
+          when Stream_OK    => null;
+        end case;
+      else
+        Read_Item
+          (Item   => Lexer.Input_Buffer (Current),
+           Status => Status);
+        Read_Item
+          (Item   => Lexer.Input_Buffer (Next),
+           Status => Status);
+        case Status is
+          when Stream_EOF   => Lexer.Input_Buffer (Next) := Null_Item;
+          when Stream_Error => null;
+          when Stream_OK    => null;
+        end case;
+      end if;
+
+      Item      := Lexer.Input_Buffer (Current);
+      Item_Next := Lexer.Input_Buffer (Next);
+    end Fetch_Characters;
+
+    Item          : Wide_Character;
+    Item_Next     : Wide_Character;
+    Stream_Status : Stream_Status_t;
   begin
     -- Default status.
     Status := Lexer_Needs_More_Data;
     Token  := Invalid_Token;
 
+    -- Fetch characters from input stream.
+    Fetch_Characters
+      (Lexer     => Lexer,
+       Item      => Item,
+       Item_Next => Item_Next,
+       Status    => Stream_Status);
+    case Stream_Status is
+      when Stream_OK  => null;
+      when Stream_Error =>
+        Status := Lexer_Error_Stream_Error;
+        return;
+      when Stream_EOF =>
+        if State_Is_Set (Lexer, Inside_String) or
+           State_Is_Set (Lexer, Inside_Escape) or
+           State_Is_Set (Lexer, Inside_Comment) then
+          Status := Lexer_Error_Early_EOF;
+        else
+          Status := Lexer_OK;
+          Append_To_Token (Lexer, 'E');
+          Complete_Token
+            (Lexer => Lexer,
+             Token => Token,
+             Kind  => Token_EOF);
+        end if;
+        return;
+    end case;
+
+    pragma Assert (Stream_Status = Stream_OK);
+
+    -- Process character.
     case Categorize_Character (Item) is
       when Comment_Delimiter =>
         if State_Is_Set (Lexer, Inside_String) or

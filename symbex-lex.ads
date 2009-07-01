@@ -12,7 +12,8 @@ package Symbex.Lex is
     (Token_Quoted_String,
      Token_Symbol,
      Token_List_Open,
-     Token_List_Close);
+     Token_List_Close,
+     Token_EOF);
 
   type Line_Number_t is new Positive;
 
@@ -37,14 +38,16 @@ package Symbex.Lex is
     (Lexer_OK,
      Lexer_Needs_More_Data,
      Lexer_Error_Line_Overflow,
-     Lexer_Error_Out_Of_Memory);
+     Lexer_Error_Out_Of_Memory,
+     Lexer_Error_Stream_Error,
+     Lexer_Error_Early_EOF);
 
   --
   -- Status values corresponding to error conditions.
   --
 
   subtype Lexer_Error_Status_t is Lexer_Status_t
-    range Lexer_Error_Line_Overflow .. Lexer_Error_Out_Of_Memory;
+    range Lexer_Error_Line_Overflow .. Lexer_Status_t'Last;
 
   --
   -- Lexer is initialized?
@@ -65,19 +68,27 @@ package Symbex.Lex is
      ((Status /= Lexer_OK) and not Initialized (Lexer)));
 
   --
-  -- Return token from 'stream' of characters.
+  -- Return token from Read_Item 'stream'.
   --
+
+  type Stream_Status_t is
+    (Stream_OK,
+     Stream_EOF,
+     Stream_Error);
+
+  generic
+    with procedure Read_Item
+      (Item   : out Wide_Character;
+       Status : out Stream_Status_t);
 
   procedure Get_Token
     (Lexer     : in out Lexer_t;
-     Item      : in     Wide_Character;
-     Item_Next : in     Wide_Character;
      Token     :    out Token_t;
      Status    :    out Lexer_Status_t);
-  pragma Precondition (Initialized (Lexer));
-  pragma Postcondition
-    (((Status  = Lexer_OK) and (Token /= Invalid_Token)) or
-     ((Status /= Lexer_OK) and (Token  = Invalid_Token)));
+--  pragma Precondition (Initialized (Lexer));
+--  pragma Postcondition
+--    (((Status  = Lexer_OK) and (Token /= Invalid_Token)) or
+--     ((Status /= Lexer_OK) and (Token  = Invalid_Token)));
 
 private
   package UBW_Strings renames Ada.Strings.Wide_Unbounded;
@@ -91,12 +102,16 @@ private
      Inside_Escape,
      Inside_Comment);
 
-  type State_t is array (State_Stage_t) of Boolean;
+  type State_t                 is array (State_Stage_t) of Boolean;
+  type Input_Buffer_Position_t is (Current, Next);
+  type Input_Buffer_t          is array (Input_Buffer_Position_t) of Wide_Character;
+  subtype Token_Buffer_t       is UBW_Strings.Unbounded_Wide_String;
 
   type Lexer_t is record
     Inited       : Boolean;
     Current_Line : Line_Number_t;
-    Token_Buffer : UBW_Strings.Unbounded_Wide_String;
+    Token_Buffer : Token_Buffer_t;
+    Input_Buffer : Input_Buffer_t;
     State        : State_t;
   end record;
 

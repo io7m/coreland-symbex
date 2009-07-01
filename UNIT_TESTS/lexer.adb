@@ -15,43 +15,47 @@ procedure Lexer is
   use type Lex.Lexer_Status_t;
 
   Done        : Boolean;
-  Item_Next   : Wide_Character;
-  Item        : Wide_Character;
   Lexer_State : Lex.Lexer_t;
   Status      : Lex.Lexer_Status_t;
   Token       : Lex.Token_t;
 
   Failure     : exception;
+
+  --
+  -- Read one character from standard input.
+  --
+
+  procedure Read_Character
+    (Item   : out Wide_Character;
+     Status : out Lex.Stream_Status_t) is
+  begin
+    WIO.Get_Immediate
+      (File => WIO.Current_Input,
+       Item => Item);
+    Status := Lex.Stream_OK;
+  exception
+    when WIO.End_Error =>
+      Status := Lex.Stream_EOF;
+    when others =>
+      Status := Lex.Stream_Error;
+  end Read_Character;
+
+  procedure Get_Token is new Lex.Get_Token
+    (Read_Item => Read_Character);
+
 begin
-  Done      := False;
-  Status    := Lex.Lexer_OK;
+  Done   := False;
+  Status := Lex.Lexer_OK;
 
   Lex.Initialize_Lexer
     (Lexer  => Lexer_State,
      Status => Status);
   pragma Assert (Status = Lex.Lexer_OK);
 
-  -- Read initial character.
-  begin
-    WIO.Get_Immediate
-      (File => WIO.Current_Input,
-       Item => Item_Next);
-  exception
-    when WIO.End_Error => Done := True;
-  end;
-
   loop exit when Done;
     begin
-      Item := Item_Next;
-
-      WIO.Get_Immediate
-        (File => WIO.Current_Input,
-         Item => Item_Next);
-
-      Lex.Get_Token
+      Get_Token
         (Lexer     => Lexer_State,
-         Item      => Item,
-         Item_Next => Item_Next,
          Token     => Token,
          Status    => Status);
       if Status in Lex.Lexer_Error_Status_t then
