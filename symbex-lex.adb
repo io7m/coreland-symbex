@@ -299,7 +299,7 @@ package body Symbex.Lex is
           -- End of token if not inside a string.
           case Categorize_Character (Item_Next) is
             when List_Open_Delimiter | List_Close_Delimiter | String_Delimiter =>
-              if State_Is_Set (Lexer, Inside_String) then
+              if not State_Is_Set (Lexer, Inside_String) then
                 Status := Lexer_OK;
                 Complete_Token
                   (Lexer => Lexer,

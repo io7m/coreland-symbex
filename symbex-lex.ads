@@ -63,9 +63,9 @@ package Symbex.Lex is
   procedure Initialize_Lexer
     (Lexer  :    out Lexer_t;
      Status :    out Lexer_Status_t);
-  pragma Postcondition
-    (((Status  = Lexer_OK) and     Initialized (Lexer)) or
-     ((Status /= Lexer_OK) and not Initialized (Lexer)));
+--  pragma Postcondition
+--    (((Status  = Lexer_OK) and     Initialized (Lexer)) or
+--     ((Status /= Lexer_OK) and not Initialized (Lexer)));
 
   --
   -- Return token from Read_Item 'stream'.
@@ -78,8 +78,8 @@ package Symbex.Lex is
 
   generic
     with procedure Read_Item
-      (Item   : out Wide_Character;
-       Status : out Stream_Status_t);
+      (Item   :     out Wide_Character;
+       Status :     out Stream_Status_t);
 
   procedure Get_Token
     (Lexer     : in out Lexer_t;
@@ -156,8 +156,8 @@ private
   pragma Postcondition (not Lexer.State (State));
 
   function State_Is_Set
-    (Lexer : in Lexer_t;
-     State : in State_Stage_t) return Boolean;
+    (Lexer : in     Lexer_t;
+     State : in     State_Stage_t) return Boolean;
 
   function Token_Is_Nonzero_Length
     (Lexer : in Lexer_t) return Boolean;
@@ -167,7 +167,7 @@ private
      Kind  : in     Token_Kind_t;
      Token :    out Token_t);
   pragma Precondition (Token_Is_Nonzero_Length (Lexer));
-  pragma Postcondition
-    ((Token /= Invalid_Token) and (not Token_Is_Nonzero_Length (Lexer)));
+--  pragma Postcondition
+--    ((Token /= Invalid_Token) and (not Token_Is_Nonzero_Length (Lexer)));
 
 end Symbex.Lex;
