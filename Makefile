@@ -4,7 +4,7 @@ default: all
 
 all:\
 UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o symbex-lex.ali \
-symbex-lex.o symbex.a symbex.ali symbex.o
+symbex-lex.o symbex-parse.ali symbex-parse.o symbex.a symbex.ali symbex.o
 
 UNIT_TESTS/lexer:\
 ada-bind ada-link UNIT_TESTS/lexer.ald UNIT_TESTS/lexer.ali symbex.ali \
@@ -13,7 +13,7 @@ symbex-lex.ali
 	./ada-link UNIT_TESTS/lexer UNIT_TESTS/lexer.ali
 
 UNIT_TESTS/lexer.ali:\
-ada-compile UNIT_TESTS/lexer.adb
+ada-compile UNIT_TESTS/lexer.adb symbex-lex.ali
 	./ada-compile UNIT_TESTS/lexer.adb
 
 UNIT_TESTS/lexer.o:\
@@ -88,9 +88,19 @@ ada-compile symbex-lex.adb symbex.ali symbex-lex.ads
 symbex-lex.o:\
 symbex-lex.ali
 
+symbex-parse.ads:\
+symbex.ali symbex-lex.ali
+
+symbex-parse.ali:\
+ada-compile symbex-parse.adb symbex.ali symbex-parse.ads
+	./ada-compile symbex-parse.adb
+
+symbex-parse.o:\
+symbex-parse.ali
+
 symbex.a:\
-cc-slib symbex.sld symbex.o symbex-lex.o
-	./cc-slib symbex symbex.o symbex-lex.o
+cc-slib symbex.sld symbex-lex.o symbex-parse.o symbex.o
+	./cc-slib symbex symbex-lex.o symbex-parse.o symbex.o
 
 symbex.ali:\
 ada-compile symbex.ads symbex.ads
@@ -103,7 +113,7 @@ clean-all: obj_clean ext_clean
 clean: obj_clean
 obj_clean:
 	rm -f UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o symbex-lex.ali \
-	symbex-lex.o symbex.a symbex.ali symbex.o
+	symbex-lex.o symbex-parse.ali symbex-parse.o symbex.a symbex.ali symbex.o
 ext_clean:
 	rm -f conf-adatype conf-cctype conf-ldtype conf-systype mk-ctxt
 
