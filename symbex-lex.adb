@@ -160,11 +160,11 @@ package body Symbex.Lex is
        Item_Next => Item_Next,
        Status    => Stream_Status);
     case Stream_Status is
-      when Stream_OK  => null;
+      when Stream_OK    => null;
       when Stream_Error =>
         Status := Lexer_Error_Stream_Error;
         return;
-      when Stream_EOF =>
+      when Stream_EOF   =>
         if State_Is_Set (Lexer, Inside_String) or
            State_Is_Set (Lexer, Inside_Escape) or
            State_Is_Set (Lexer, Inside_Comment) then
