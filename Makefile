@@ -3,8 +3,9 @@
 default: all
 
 all:\
-UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o symbex-lex.ali \
-symbex-lex.o symbex-parse.ali symbex-parse.o symbex.a symbex.ali symbex.o
+UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o UNIT_TESTS/parser \
+UNIT_TESTS/parser.ali UNIT_TESTS/parser.o symbex-lex.ali symbex-lex.o \
+symbex-parse.ali symbex-parse.o symbex.a symbex.ali symbex.o
 
 # -- SYSDEPS start
 flags-stack-ada:
@@ -43,6 +44,19 @@ ada-compile UNIT_TESTS/lexer.adb symbex-lex.ali
 
 UNIT_TESTS/lexer.o:\
 UNIT_TESTS/lexer.ali
+
+UNIT_TESTS/parser:\
+ada-bind ada-link UNIT_TESTS/parser.ald UNIT_TESTS/parser.ali symbex.ali \
+symbex-lex.ali symbex-parse.ali
+	./ada-bind UNIT_TESTS/parser.ali
+	./ada-link UNIT_TESTS/parser UNIT_TESTS/parser.ali
+
+UNIT_TESTS/parser.ali:\
+ada-compile UNIT_TESTS/parser.adb symbex-lex.ali symbex-parse.ali
+	./ada-compile UNIT_TESTS/parser.adb
+
+UNIT_TESTS/parser.o:\
+UNIT_TESTS/parser.ali
 
 ada-bind:\
 conf-adabind conf-systype conf-adatype conf-adabflags conf-adafflist flags-cwd \
@@ -140,7 +154,8 @@ symbex.ali
 clean-all: sysdeps_clean obj_clean ext_clean
 clean: obj_clean
 obj_clean:
-	rm -f UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o symbex-lex.ali \
+	rm -f UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o \
+	UNIT_TESTS/parser UNIT_TESTS/parser.ali UNIT_TESTS/parser.o symbex-lex.ali \
 	symbex-lex.o symbex-parse.ali symbex-parse.o symbex.a symbex.ali symbex.o
 ext_clean:
 	rm -f conf-adatype conf-cctype conf-ldtype conf-systype mk-ctxt
