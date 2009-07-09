@@ -59,7 +59,7 @@ package body Symbex.Lex is
      Token :    out Token_t) is
   begin
     Token := Token_t'
-      (Valid       => True,
+      (Is_Valid    => True,
        Line_Number => Lexer.Current_Line,
        Text        => Lexer.Token_Buffer,
        Kind        => Kind);
@@ -118,15 +118,6 @@ package body Symbex.Lex is
        State        => State_t'(others => False));
     Status       := Lexer_OK;
   end Initialize_Lexer;
-
-  --
-  -- Return true if token is valid.
-  --
-
-  function Token_Is_Valid (Token : in Token_t) return Boolean is
-  begin
-    return Token.Valid;
-  end Token_Is_Valid;
 
   --
   -- Retrieve token from input stream.

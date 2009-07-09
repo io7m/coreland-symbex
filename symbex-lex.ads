@@ -18,7 +18,7 @@ package Symbex.Lex is
   type Line_Number_t is new Positive;
 
   type Token_t is record
-    Valid       : Boolean;
+    Is_Valid    : Boolean;
     Line_Number : Line_Number_t;
     Kind        : Token_Kind_t;
     Text        : Ada.Strings.Wide_Unbounded.Unbounded_Wide_String;
@@ -66,12 +66,6 @@ package Symbex.Lex is
 --  pragma Postcondition
 --    (((Status  = Lexer_OK) and     Initialized (Lexer)) or
 --     ((Status /= Lexer_OK) and not Initialized (Lexer)));
-
-  --
-  -- Token is valid?
-  --
-
-  function Token_Is_Valid (Token : in Token_t) return Boolean;
 
   --
   -- Return token from Read_Item 'stream'.
@@ -126,7 +120,7 @@ private
   --
 
   Invalid_Token : constant Token_t :=
-    Token_t'(Valid       => False,
+    Token_t'(Is_Valid    => False,
              Line_Number => Line_Number_t'First,
              Text        => UBW_Strings.Null_Unbounded_Wide_String,
              Kind        => Token_Kind_t'First);
