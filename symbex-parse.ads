@@ -2,6 +2,9 @@ with Ada.Containers.Hashed_Sets;
 with Ada.Containers.Vectors;
 with Ada.Strings.Wide_Unbounded;
 with Symbex.Lex;
+with Stack;
+
+pragma Elaborate_All (Stack);
 
 package Symbex.Parse is
 
@@ -13,7 +16,8 @@ package Symbex.Parse is
 
   type Tree_Status_t is
     (Tree_OK,
-     Tree_Error_Unbalanced_Parenthesis);
+     Tree_Error_Unbalanced_Parenthesis,
+     Tree_Error_Early_EOF);
 
   --
   -- Tree node kind.
@@ -48,9 +52,9 @@ package Symbex.Parse is
     (Tree   : in out Tree_t;
      Status :    out Tree_Status_t);
   pragma Precondition (not Initialized (Tree));
-  pragma Postcondition
-    (((Status  = Tree_OK) and     Initialized (Tree)) or
-     ((Status /= Tree_OK) and not Initialized (Tree)));
+--  pragma Postcondition
+--    (((Status  = Tree_OK) and     Initialized (Tree)) or
+--     ((Status /= Tree_OK) and not Initialized (Tree)));
 
   --
   -- Process token.
@@ -97,29 +101,58 @@ private
      Equivalent_Keys => "=");
 
   -- Index of list in array of lists.
-  type Node_List_ID_t is new Positive;
+  type List_ID_t is new Positive;
 
   -- Node type, element of list.
   type Node_t (Kind : Node_Kind_t := Node_Symbol) is record
     case Kind is
       when Node_Symbol => Name : Node_String_Cache_ID_t;
       when Node_String => Data : Node_String_Cache_ID_t;
-      when Node_List   => List : Node_List_ID_t;
+      when Node_List   => List : List_ID_t;
     end case;
   end record;
 
+  --
   -- Node list.
-  package Node_Lists is new Ada.Containers.Vectors
+  --
+
+  package Lists is new Ada.Containers.Vectors
     (Index_Type   => Positive,
      Element_Type => Node_t);
 
-  subtype Node_Lists_t is Node_Lists.Vector;
+  subtype List_Nodes_t is Lists.Vector;
 
+  type List_t is record
+    Parent : List_ID_t;
+    Nodes  : List_Nodes_t;
+  end record;
+
+  --
+  -- Array of node lists.
+  --
+
+  package List_Arrays is new Ada.Containers.Vectors
+    (Index_Type   => List_ID_t,
+     Element_Type => List_t);
+
+  subtype List_Array_t is List_Arrays.Vector;
+
+  --
+  -- List ID stack.
+  --
+
+  package List_ID_Stack is new Stack
+    (Element_Type => List_ID_t);
+
+  --
   -- Tree type.
+  --
+
   type Tree_t is record
-    Inited     : Boolean;
-    List_Depth : Natural;
-    Lists      : Node_Lists_t;
+    Inited       : Boolean;
+    List_Stack   : List_ID_Stack.Stack_t;
+    Lists        : List_Array_t;
+    Current_List : List_ID_t;
   end record;
 
 end Symbex.Parse;

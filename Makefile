@@ -6,6 +6,31 @@ all:\
 UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o symbex-lex.ali \
 symbex-lex.o symbex-parse.ali symbex-parse.o symbex.a symbex.ali symbex.o
 
+# -- SYSDEPS start
+flags-stack-ada:
+	@echo SYSDEPS stack-ada-flags run create flags-stack-ada 
+	@(cd SYSDEPS/modules/stack-ada-flags && ./run)
+libs-stack-ada-S:
+	@echo SYSDEPS stack-ada-libs-S run create libs-stack-ada-S 
+	@(cd SYSDEPS/modules/stack-ada-libs-S && ./run)
+
+
+stack-ada-flags_clean:
+	@echo SYSDEPS stack-ada-flags clean flags-stack-ada 
+	@(cd SYSDEPS/modules/stack-ada-flags && ./clean)
+stack-ada-libs-S_clean:
+	@echo SYSDEPS stack-ada-libs-S clean libs-stack-ada-S 
+	@(cd SYSDEPS/modules/stack-ada-libs-S && ./clean)
+
+
+sysdeps_clean:\
+stack-ada-flags_clean \
+stack-ada-libs-S_clean \
+
+
+# -- SYSDEPS end
+
+
 UNIT_TESTS/lexer:\
 ada-bind ada-link UNIT_TESTS/lexer.ald UNIT_TESTS/lexer.ali symbex.ali \
 symbex-lex.ali
@@ -20,13 +45,16 @@ UNIT_TESTS/lexer.o:\
 UNIT_TESTS/lexer.ali
 
 ada-bind:\
-conf-adabind conf-systype conf-adatype conf-adabflags conf-adafflist flags-cwd
+conf-adabind conf-systype conf-adatype conf-adabflags conf-adafflist flags-cwd \
+	flags-stack-ada
 
 ada-compile:\
-conf-adacomp conf-adatype conf-systype conf-adacflags conf-adafflist flags-cwd
+conf-adacomp conf-adatype conf-systype conf-adacflags conf-adafflist flags-cwd \
+	flags-stack-ada
 
 ada-link:\
-conf-adalink conf-adatype conf-systype conf-adaldflags
+conf-adalink conf-adatype conf-systype conf-adaldflags conf-aldfflist \
+	libs-stack-ada-S
 
 ada-srcmap:\
 conf-adacomp conf-adatype conf-systype
@@ -109,7 +137,7 @@ ada-compile symbex.ads symbex.ads
 symbex.o:\
 symbex.ali
 
-clean-all: obj_clean ext_clean
+clean-all: sysdeps_clean obj_clean ext_clean
 clean: obj_clean
 obj_clean:
 	rm -f UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o symbex-lex.ali \
