@@ -68,6 +68,12 @@ package Symbex.Lex is
 --     ((Status /= Lexer_OK) and not Initialized (Lexer)));
 
   --
+  -- Token is valid?
+  --
+
+  function Token_Is_Valid (Token : in Token_t) return Boolean;
+
+  --
   -- Return token from Read_Item 'stream'.
   --
 

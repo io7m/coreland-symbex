@@ -7,13 +7,6 @@ package body Symbex.Lex is
   -- Private subprograms.
   --
 
-  procedure Append_To_Token
-    (Lexer : in out Lexer_t;
-     Item  : in     Wide_Character) is
-  begin
-    UBW_Strings.Append (Lexer.Token_Buffer, Item);
-  end Append_To_Token;
-
   procedure Set_State
     (Lexer : in out Lexer_t;
      State : in     State_Stage_t) is
@@ -35,11 +28,30 @@ package body Symbex.Lex is
     return Lexer.State (State);
   end State_Is_Set;
 
+  --
+  -- Return true if internal token buffer contains data.
+  --
+
   function Token_Is_Nonzero_Length
     (Lexer : in Lexer_t) return Boolean is
   begin
     return UBW_Strings.Length (Lexer.Token_Buffer) /= 0;
   end Token_Is_Nonzero_Length;
+
+  --
+  -- Append item to internal token buffer.
+  --
+
+  procedure Append_To_Token
+    (Lexer : in out Lexer_t;
+     Item  : in     Wide_Character) is
+  begin
+    UBW_Strings.Append (Lexer.Token_Buffer, Item);
+  end Append_To_Token;
+
+  --
+  -- Finish token in buffer and assign kind Kind.
+  --
 
   procedure Complete_Token
     (Lexer : in out Lexer_t;
@@ -53,6 +65,10 @@ package body Symbex.Lex is
        Kind        => Kind);
     Lexer.Token_Buffer := UBW_Strings.Null_Unbounded_Wide_String;
   end Complete_Token;
+
+  --
+  -- Categorize Item into character class.
+  --
 
   function Categorize_Character
     (Item : in Wide_Character) return Character_Class_t
@@ -86,6 +102,10 @@ package body Symbex.Lex is
     return Lexer.Inited;
   end Initialized;
 
+  --
+  -- Initialize the lexer.
+  --
+
   procedure Initialize_Lexer
     (Lexer  :    out Lexer_t;
      Status :    out Lexer_Status_t) is
@@ -98,6 +118,19 @@ package body Symbex.Lex is
        State        => State_t'(others => False));
     Status       := Lexer_OK;
   end Initialize_Lexer;
+
+  --
+  -- Return true if token is valid.
+  --
+
+  function Token_Is_Valid (Token : in Token_t) return Boolean is
+  begin
+    return Token.Valid;
+  end Token_Is_Valid;
+
+  --
+  -- Retrieve token from input stream.
+  --
 
   procedure Get_Token
     (Lexer     : in out Lexer_t;
@@ -170,12 +203,22 @@ package body Symbex.Lex is
            State_Is_Set (Lexer, Inside_Comment) then
           Status := Lexer_Error_Early_EOF;
         else
+          -- Reached upon EOF with no preceding newline/whitespace.
           Status := Lexer_OK;
-          Append_To_Token (Lexer, 'E');
-          Complete_Token
-            (Lexer => Lexer,
-             Token => Token,
-             Kind  => Token_EOF);
+
+          -- Have unfinished token?
+          if Token_Is_Nonzero_Length (Lexer) then
+            Complete_Token
+              (Lexer => Lexer,
+               Token => Token,
+               Kind  => Token_Symbol);
+          else
+            Append_To_Token (Lexer, 'E');
+            Complete_Token
+              (Lexer => Lexer,
+               Token => Token,
+               Kind  => Token_EOF);
+          end if;
         end if;
         return;
     end case;
