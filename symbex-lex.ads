@@ -122,7 +122,7 @@ private
   Invalid_Token : constant Token_t :=
     Token_t'(Is_Valid    => False,
              Line_Number => Line_Number_t'First,
-             Text        => UBW_Strings.Null_Unbounded_Wide_String,
+             Text        => <>,
              Kind        => Token_Kind_t'First);
 
   --
