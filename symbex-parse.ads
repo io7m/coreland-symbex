@@ -16,8 +16,8 @@ package Symbex.Parse is
 
   type Tree_Status_t is
     (Tree_OK,
-     Tree_Error_Unbalanced_Parenthesis,
-     Tree_Error_Early_EOF);
+     Tree_Error_Excess_Closing_Parentheses,
+     Tree_Error_Unterminated_List);
 
   --
   -- Tree node kind.
@@ -35,7 +35,7 @@ package Symbex.Parse is
   --
 
   subtype Tree_Error_Status_t is Tree_Status_t
-    range Tree_Error_Unbalanced_Parenthesis .. Tree_Status_t'Last;
+    range Tree_Error_Excess_Closing_Parentheses .. Tree_Status_t'Last;
 
   --
   -- Tree is initialized?
@@ -48,7 +48,7 @@ package Symbex.Parse is
   -- Initialize parser state.
   --
 
-  procedure Initialize
+  procedure Initialize_Tree
     (Tree   : in out Tree_t;
      Status :    out Tree_Status_t);
   pragma Precondition (not Initialized (Tree));
@@ -64,7 +64,7 @@ package Symbex.Parse is
     (Tree   : in out Tree_t;
      Token  : in     Lex.Token_t;
      Status :    out Tree_Status_t);
-  pragma Precondition (Initialized (Tree));
+  pragma Precondition (Initialized (Tree) and Token.Is_Valid);
 
 private
   package UBW_Strings renames Ada.Strings.Wide_Unbounded;
@@ -153,6 +153,7 @@ private
     List_Stack   : List_ID_Stack.Stack_t;
     Lists        : List_Array_t;
     Current_List : List_ID_t;
+    String_Cache : Node_String_Cache.Set;
   end record;
 
 end Symbex.Parse;

@@ -74,6 +74,160 @@ package body Symbex.Parse is
   end Append_Node;
 
   --
+  -- Add data to cache, return the new ID of the data element or the ID of
+  -- the matching data element already in the cache.
+  --
+
+  procedure Add_To_Cache
+    (Tree : in out Tree_t;
+     Data : in     UBW_Strings.Unbounded_Wide_String;
+     ID   :    out Node_String_Cache_ID_t)
+  is
+    Cursor   : Node_String_Cache.Cursor;
+    Inserted : Boolean;
+  begin
+    Node_String_Cache.Insert
+      (Container => Tree.String_Cache,
+       New_Item  => Data,
+       Position  => Cursor,
+       Inserted  => Inserted);
+    ID := Node_String_Cache_By_Key.Key (Cursor);
+  end Add_To_Cache;
+
+  --
+  -- Token processors.
+  --
+
+  --
+  -- Add quoted string to current list.
+  --
+
+  procedure Process_Quoted_String
+    (Tree   : in out Tree_t;
+     Token  : in     Lex.Token_t)
+  is
+    Current_List : List_ID_t;
+    Node         : Node_t (Kind => Node_String);
+  begin
+    -- Add data to cache.
+    Add_To_Cache
+      (Tree => Tree,
+       Data => Token.Text,
+       ID   => Node.Data);
+
+    -- Fetch current list.
+    List_ID_Stack.Peek
+      (Stack   => Tree.List_Stack,
+       Element => Current_List);
+
+    -- Add node to list.
+    Append_Node
+      (Tree    => Tree,
+       List_ID => Current_List,
+       Node    => Node);
+  end Process_Quoted_String;
+
+  --
+  -- Add symbol to current list.
+  --
+
+  procedure Process_Symbol
+    (Tree   : in out Tree_t;
+     Token  : in     Lex.Token_t)
+  is
+    Current_List : List_ID_t;
+    Node         : Node_t (Kind => Node_Symbol);
+  begin
+    -- Add data to cache.
+    Add_To_Cache
+      (Tree => Tree,
+       Data => Token.Text,
+       ID   => Node.Name);
+
+    -- Fetch current list.
+    List_ID_Stack.Peek
+      (Stack   => Tree.List_Stack,
+       Element => Current_List);
+
+    -- Add node to list.
+    Append_Node
+      (Tree    => Tree,
+       List_ID => Current_List,
+       Node    => Node);
+  end Process_Symbol;
+
+  --
+  -- Open new list. Create new node pointing to new list in current.
+  -- Push list onto stack.
+  --
+
+  procedure Process_List_Open (Tree : in out Tree_t) is
+    List   : List_t;
+    New_ID : List_ID_t;
+    Node   : Node_t (Kind => Node_List);
+  begin
+    -- The ID of this new list will be the previous list + 1.
+    New_ID := List_Arrays.Last_Index (Tree.Lists) + 1;
+
+    -- Fetch list parent, if available.
+    if List_ID_Stack.Size (Tree.List_Stack) > 0 then
+      List_ID_Stack.Peek
+        (Stack   => Tree.List_Stack,
+         Element => List.Parent);
+
+      -- Append node to parent pointing to this list.
+      Node.List := New_ID;
+      Append_Node
+        (Tree    => Tree,
+         List_ID => List.Parent,
+         Node    => Node);
+    else
+      -- Root list has self as own parent.
+      List.Parent := New_ID;
+    end if;
+
+    -- Add list to tree.
+    List_Arrays.Append
+      (Container => Tree.Lists,
+       New_Item  => List);
+
+    -- Push list onto stack.
+    List_ID_Stack.Push
+      (Stack   => Tree.List_Stack,
+       Element => New_ID);
+
+    pragma Assert (List_Arrays.Last_Index (Tree.Lists) = New_ID);
+  end Process_List_Open;
+
+  --
+  -- Close list and remove from stack.
+  --
+
+  procedure Process_List_Close
+    (Tree   : in out Tree_t;
+     Status : in out Tree_Status_t) is
+  begin
+    List_ID_Stack.Pop_Discard (Tree.List_Stack);
+  exception
+    -- Stack underflow.
+    when Constraint_Error =>
+      Status := Tree_Error_Excess_Closing_Parentheses;
+  end Process_List_Close;
+
+  --
+  -- Check for premature EOF.
+  --
+
+  procedure Process_EOF
+    (Tree   : in out Tree_t;
+     Status : in out Tree_Status_t) is
+  begin
+    if List_ID_Stack.Size (Tree.List_Stack) /= 0 then
+      Status := Tree_Error_Unterminated_List;
+    end if;
+  end Process_EOF;
+
+  --
   -- Public API.
   --
 
@@ -84,20 +238,21 @@ package body Symbex.Parse is
   end Initialized;
 
   --
-  -- Initialize parser state.
+  -- Initialize tree state.
   --
 
-  procedure Initialize
+  procedure Initialize_Tree
     (Tree   : in out Tree_t;
      Status :    out Tree_Status_t) is
   begin
-    Tree :=
-      Tree_t'(Inited       => True,
-              List_Stack   => <>,
-              Lists        => <>,
-              Current_List => List_ID_t'First);
+    Tree := Tree_t'
+      (Inited       => True,
+       List_Stack   => <>,
+       Lists        => <>,
+       String_Cache => <>,
+       Current_List => List_ID_t'First);
     Status := Tree_OK;
-  end Initialize;
+  end Initialize_Tree;
 
   --
   -- Process token.
@@ -108,78 +263,29 @@ package body Symbex.Parse is
      Token  : in     Lex.Token_t;
      Status :    out Tree_Status_t)
   is
-    procedure Quoted_String is
-    begin
-      null;
-    end Quoted_String;
-
-    procedure Symbol is
-    begin
-      null;
-    end Symbol;
-
-    procedure List_Open is
-      List   : List_t;
-      New_ID : List_ID_t;
-      Node   : Node_t (Kind => Node_List);
-    begin
-      -- The ID of this new list will be the previous list + 1.
-      New_ID := List_Arrays.Last_Index (Tree.Lists) + 1;
-
-      -- Fetch list parent, if available.
-      if List_ID_Stack.Size (Tree.List_Stack) > 0 then
-        List_ID_Stack.Peek
-          (Stack   => Tree.List_Stack,
-           Element => List.Parent);
-
-        -- Append node to parent pointing to this list.
-        Node.List := New_ID;
-        Append_Node
-          (Tree    => Tree,
-           List_ID => List.Parent,
-           Node    => Node);
-      else
-        -- Root list has self as own parent.
-        List.Parent := New_ID;
-      end if;
-
-      -- Add list to tree.
-      List_Arrays.Append
-        (Container => Tree.Lists,
-         New_Item  => List);
-
-      -- Push list onto stack.
-      List_ID_Stack.Push
-        (Stack   => Tree.List_Stack,
-         Element => New_ID);
-
-      pragma Assert (List_Arrays.Last_Index (Tree.Lists) = New_ID);
-    end List_Open;
-
-    procedure List_Close is
-    begin
-      Status := Tree_OK;
-      List_ID_Stack.Pop_Discard (Tree.List_Stack);
-    exception
-      -- Stack underflow.
-      when Constraint_Error =>
-        Status := Tree_Error_Unbalanced_Parenthesis;
-    end List_Close;
-
-    procedure EOF is
-    begin
-      if List_ID_Stack.Size (Tree.List_Stack) /= 0 then
-        Status := Tree_Error_Early_EOF;
-      end if;
-      Status := Tree_OK;
-    end EOF;
   begin
+    -- Status is OK by default.
+    Status := Tree_OK;
+
     case Token.Kind is
-      when Lex.Token_Quoted_String => Quoted_String;
-      when Lex.Token_Symbol        => Symbol;
-      when Lex.Token_List_Open     => List_Open;
-      when Lex.Token_List_Close    => List_Close;
-      when Lex.Token_EOF           => EOF;
+      when Lex.Token_Quoted_String =>
+        Process_Quoted_String
+          (Tree   => Tree,
+           Token  => Token);
+      when Lex.Token_Symbol =>
+        Process_Symbol
+          (Tree   => Tree,
+           Token  => Token);
+      when Lex.Token_List_Open =>
+        Process_List_Open (Tree);
+      when Lex.Token_List_Close =>
+        Process_List_Close
+          (Tree   => Tree,
+           Status => Status);
+      when Lex.Token_EOF =>
+        Process_EOF
+          (Tree   => Tree,
+           Status => Status);
     end case;
   end Process_Token;
 
