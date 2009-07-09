@@ -4,6 +4,29 @@ use type Interfaces.Unsigned_32;
 
 package body Symbex.Parse is
 
+  package body Internal is
+
+    function Get_String
+      (Tree : in Tree_t;
+       ID   : in Node_String_Data_ID_t)
+      return Ada.Strings.Wide_Unbounded.Unbounded_Wide_String is
+    begin
+      return Node_String_Cache_By_Key.Element
+        (Container => Tree.String_Cache,
+         Key       => ID);
+    end Get_String;
+
+    function Get_Data_ID (Node : in Node_t) return Node_String_Data_ID_t is
+    begin
+      case Node.Kind is
+        when Node_Symbol => return Node.Name;
+        when Node_String => return Node.Data;
+        when others      => raise Constraint_Error with "invalid node type";
+      end case;
+    end Get_Data_ID;
+
+  end Internal;
+
   --
   -- Basic wide string hashing function.
   --
@@ -26,7 +49,7 @@ package body Symbex.Parse is
   --
 
   function Node_String_Cache_ID_Hash
-    (Key : Node_String_Cache_ID_t) return Ada.Containers.Hash_Type
+    (Key : Node_String_Data_ID_t) return Ada.Containers.Hash_Type
   is
     Temp_Hash : Interfaces.Unsigned_32 := Interfaces.Unsigned_32 (Key);
   begin
@@ -46,9 +69,9 @@ package body Symbex.Parse is
   --
 
   function Node_String_Cache_ID_Key
-    (Element : UBW_Strings.Unbounded_Wide_String) return Node_String_Cache_ID_t is
+    (Element : UBW_Strings.Unbounded_Wide_String) return Node_String_Data_ID_t is
   begin
-    return Node_String_Cache_ID_t (UBW_String_Hash (Element));
+    return Node_String_Data_ID_t (UBW_String_Hash (Element));
   end Node_String_Cache_ID_Key;
 
   --
@@ -102,7 +125,7 @@ package body Symbex.Parse is
   procedure Add_To_Cache
     (Tree : in out Tree_t;
      Data : in     UBW_Strings.Unbounded_Wide_String;
-     ID   :    out Node_String_Cache_ID_t)
+     ID   :    out Node_String_Data_ID_t)
   is
     Cursor   : Node_String_Cache.Cursor;
     Inserted : Boolean;
@@ -236,6 +259,7 @@ package body Symbex.Parse is
     if List_ID_Stack.Size (Tree.List_Stack) > 1 then
       Status := Tree_Error_Unterminated_List;
     end if;
+    Tree.Completed := True;
   end Process_EOF;
 
   --
@@ -268,6 +292,12 @@ package body Symbex.Parse is
     return Tree.Inited;
   end Initialized;
 
+  function Completed
+    (Tree : in     Tree_t) return Boolean is
+  begin
+    return Tree.Completed;
+  end Completed;
+
   --
   -- Initialize tree state.
   --
@@ -278,6 +308,7 @@ package body Symbex.Parse is
   begin
     Tree := Tree_t'
       (Inited       => True,
+       Completed    => False,
        List_Stack   => <>,
        Lists        => <>,
        String_Cache => <>,
@@ -321,5 +352,14 @@ package body Symbex.Parse is
            Status => Status);
     end case;
   end Process_Token;
+
+  --
+  -- Node accessors.
+  --
+
+  function Node_Kind (Node : in Node_t) return Node_Kind_t is
+  begin
+    return Node.Kind;
+  end Node_Kind;
 
 end Symbex.Parse;

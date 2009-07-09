@@ -7,5 +7,9 @@ pragma source_file_name(Symbex.Lex, body_file_name => "symbex-lex.adb");
 pragma source_file_name(Symbex.Parse, spec_file_name => "symbex-parse.ads");
 pragma source_file_name(Symbex.Parse, body_file_name => "symbex-parse.adb");
 
+-- ./symbex-walk.apk
+pragma source_file_name(Symbex.Walk, spec_file_name => "symbex-walk.ads");
+pragma source_file_name(Symbex.Walk, body_file_name => "symbex-walk.adb");
+
 -- ./symbex.apk
 pragma source_file_name(Symbex, spec_file_name => "symbex.ads");

@@ -5,7 +5,8 @@ default: all
 all:\
 UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o UNIT_TESTS/parser \
 UNIT_TESTS/parser.ali UNIT_TESTS/parser.o symbex-lex.ali symbex-lex.o \
-symbex-parse.ali symbex-parse.o symbex.a symbex.ali symbex.o
+symbex-parse.ali symbex-parse.o symbex-walk.ali symbex-walk.o symbex.a \
+symbex.ali symbex.o
 
 # -- SYSDEPS start
 flags-stack-ada:
@@ -140,9 +141,19 @@ ada-compile symbex-parse.adb symbex.ali symbex-parse.ads
 symbex-parse.o:\
 symbex-parse.ali
 
+symbex-walk.ads:\
+symbex.ali symbex-parse.ali
+
+symbex-walk.ali:\
+ada-compile symbex-walk.adb symbex.ali symbex-walk.ads
+	./ada-compile symbex-walk.adb
+
+symbex-walk.o:\
+symbex-walk.ali
+
 symbex.a:\
-cc-slib symbex.sld symbex-lex.o symbex-parse.o symbex.o
-	./cc-slib symbex symbex-lex.o symbex-parse.o symbex.o
+cc-slib symbex.sld symbex-lex.o symbex-parse.o symbex-walk.o symbex.o
+	./cc-slib symbex symbex-lex.o symbex-parse.o symbex-walk.o symbex.o
 
 symbex.ali:\
 ada-compile symbex.ads symbex.ads
@@ -156,7 +167,8 @@ clean: obj_clean
 obj_clean:
 	rm -f UNIT_TESTS/lexer UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o \
 	UNIT_TESTS/parser UNIT_TESTS/parser.ali UNIT_TESTS/parser.o symbex-lex.ali \
-	symbex-lex.o symbex-parse.ali symbex-parse.o symbex.a symbex.ali symbex.o
+	symbex-lex.o symbex-parse.ali symbex-parse.o symbex-walk.ali symbex-walk.o \
+	symbex.a symbex.ali symbex.o
 ext_clean:
 	rm -f conf-adatype conf-cctype conf-ldtype conf-systype mk-ctxt
 
