@@ -74,6 +74,27 @@ package body Symbex.Parse is
   end Append_Node;
 
   --
+  -- Append list to list array and push list ID onto stack.
+  --
+
+  procedure Append_List
+    (Tree    : in out Tree_t;
+     List    : in     List_t;
+     List_ID : in     List_ID_t) is
+  begin
+    -- Add list to tree.
+    List_Arrays.Append
+      (Container => Tree.Lists,
+       New_Item  => List);
+    pragma Assert (List_Arrays.Last_Index (Tree.Lists) = List_ID);
+
+    -- Push list onto stack.
+    List_ID_Stack.Push
+      (Stack   => Tree.List_Stack,
+       Element => List_ID);
+  end Append_List;
+
+  --
   -- Add data to cache, return the new ID of the data element or the ID of
   -- the matching data element already in the cache.
   --
@@ -166,35 +187,25 @@ package body Symbex.Parse is
     New_ID : List_ID_t;
     Node   : Node_t (Kind => Node_List);
   begin
-    -- The ID of this new list will be the previous list + 1.
     New_ID := List_Arrays.Last_Index (Tree.Lists) + 1;
 
     -- Fetch list parent, if available.
-    if List_ID_Stack.Size (Tree.List_Stack) > 0 then
-      List_ID_Stack.Peek
-        (Stack   => Tree.List_Stack,
-         Element => List.Parent);
+    List_ID_Stack.Peek
+      (Stack   => Tree.List_Stack,
+       Element => List.Parent);
 
-      -- Append node to parent pointing to this list.
-      Node.List := New_ID;
-      Append_Node
-        (Tree    => Tree,
-         List_ID => List.Parent,
-         Node    => Node);
-    else
-      -- Root list has self as own parent.
-      List.Parent := New_ID;
-    end if;
+    -- Append node to parent pointing to this list.
+    Node.List := New_ID;
+    Append_Node
+      (Tree    => Tree,
+       List_ID => List.Parent,
+       Node    => Node);
 
     -- Add list to tree.
-    List_Arrays.Append
-      (Container => Tree.Lists,
-       New_Item  => List);
-
-    -- Push list onto stack.
-    List_ID_Stack.Push
-      (Stack   => Tree.List_Stack,
-       Element => New_ID);
+    Append_List
+      (Tree    => Tree,
+       List    => List,
+       List_ID => New_ID);
 
     pragma Assert (List_Arrays.Last_Index (Tree.Lists) = New_ID);
   end Process_List_Open;
@@ -207,11 +218,11 @@ package body Symbex.Parse is
     (Tree   : in out Tree_t;
      Status : in out Tree_Status_t) is
   begin
-    List_ID_Stack.Pop_Discard (Tree.List_Stack);
-  exception
-    -- Stack underflow.
-    when Constraint_Error =>
+    if List_ID_Stack.Size (Tree.List_Stack) > 1 then
+      List_ID_Stack.Pop_Discard (Tree.List_Stack);
+    else
       Status := Tree_Error_Excess_Closing_Parentheses;
+    end if;
   end Process_List_Close;
 
   --
@@ -222,10 +233,30 @@ package body Symbex.Parse is
     (Tree   : in out Tree_t;
      Status : in out Tree_Status_t) is
   begin
-    if List_ID_Stack.Size (Tree.List_Stack) /= 0 then
+    if List_ID_Stack.Size (Tree.List_Stack) > 1 then
       Status := Tree_Error_Unterminated_List;
     end if;
   end Process_EOF;
+
+  --
+  -- Add initial empty root list.
+  --
+
+  procedure Add_Root_List (Tree : in out Tree_t) is
+    List   : List_t;
+    New_ID : List_ID_t;
+  begin
+    New_ID := List_ID_t'First;
+
+    -- Root list is parent of itself.
+    List.Parent := New_ID;
+
+    -- Add list to tree.
+    Append_List
+      (Tree    => Tree,
+       List    => List,
+       List_ID => New_ID);
+  end Add_Root_List;
 
   --
   -- Public API.
@@ -251,6 +282,9 @@ package body Symbex.Parse is
        Lists        => <>,
        String_Cache => <>,
        Current_List => List_ID_t'First);
+
+    Add_Root_List (Tree);
+
     Status := Tree_OK;
   end Initialize_Tree;
 
@@ -261,8 +295,7 @@ package body Symbex.Parse is
   procedure Process_Token
     (Tree   : in out Tree_t;
      Token  : in     Lex.Token_t;
-     Status :    out Tree_Status_t)
-  is
+     Status :    out Tree_Status_t) is
   begin
     -- Status is OK by default.
     Status := Tree_OK;
