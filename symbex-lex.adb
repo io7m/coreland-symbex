@@ -1,5 +1,7 @@
 with Ada.Wide_Characters.Unicode; -- GNAT Specific.
 
+-- with Ada.Text_IO;
+
 package body Symbex.Lex is
   package Unicode renames Ada.Wide_Characters.Unicode;
 
@@ -35,6 +37,7 @@ package body Symbex.Lex is
   function Token_Is_Nonzero_Length
     (Lexer : in Lexer_t) return Boolean is
   begin
+--    Ada.Text_IO.Put_Line ("length: " & Natural'Image (UBW_Strings.Length (Lexer.Token_Buffer)));
     return UBW_Strings.Length (Lexer.Token_Buffer) /= 0;
   end Token_Is_Nonzero_Length;
 
@@ -155,13 +158,20 @@ package body Symbex.Lex is
         Read_Item
           (Item   => Lexer.Input_Buffer (Current),
            Status => Status);
-        Read_Item
-          (Item   => Lexer.Input_Buffer (Next),
-           Status => Status);
         case Status is
-          when Stream_EOF   => Lexer.Input_Buffer (Next) := Null_Item;
+          when Stream_EOF   => null;
           when Stream_Error => null;
-          when Stream_OK    => null;
+          when Stream_OK    =>
+            Read_Item
+              (Item   => Lexer.Input_Buffer (Next),
+               Status => Status);
+            case Status is
+              when Stream_EOF   =>
+                Lexer.Input_Buffer (Next) := Null_Item;
+                Status                    := Stream_OK;
+              when Stream_Error => null;
+              when Stream_OK    => null;
+            end case;
         end case;
       end if;
 
@@ -190,8 +200,7 @@ package body Symbex.Lex is
         return;
       when Stream_EOF   =>
         if State_Is_Set (Lexer, Inside_String) or
-           State_Is_Set (Lexer, Inside_Escape) or
-           State_Is_Set (Lexer, Inside_Comment) then
+           State_Is_Set (Lexer, Inside_Escape) then
           Status := Lexer_Error_Early_EOF;
         else
           -- Reached upon EOF with no preceding newline/whitespace.
