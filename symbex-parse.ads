@@ -79,9 +79,6 @@ package Symbex.Parse is
   procedure Initialize_Tree
     (Tree   : in out Tree_t;
      Status :    out Tree_Status_t);
-  pragma Precondition
-    (not Initialized (Tree) and
-     not Completed (Tree));
 --  pragma Postcondition
 --    (((Status  = Tree_OK) and     Initialized (Tree)) or
 --     ((Status /= Tree_OK) and not Initialized (Tree)));
@@ -113,6 +110,7 @@ package Symbex.Parse is
       (Tree : in Tree_t;
        ID   : in Node_String_Data_ID_t)
       return Ada.Strings.Wide_Unbounded.Unbounded_Wide_String;
+    pragma Precondition (Completed (Tree));
 
     --
     -- Fetch node data ID (only valid for strings and symbols).
@@ -120,6 +118,30 @@ package Symbex.Parse is
 
     function Get_Data_ID (Node : in Node_t) return Node_String_Data_ID_t;
     pragma Precondition (Node_Kind (Node) /= Node_List);
+
+    --
+    -- Fetch node list ID (only valid for lists).
+    --
+
+    function Get_List_ID (Node : in Node_t) return List_ID_t;
+    pragma Precondition (Node_Kind (Node) = Node_List);
+
+    --
+    -- Retrieve list.
+    --
+
+    function Get_List
+      (Tree    : in Tree_t;
+       List_ID : in List_ID_t) return List_t;
+    pragma Precondition (Completed (Tree));
+
+    --
+    -- Iterate over nodes in list.
+    --
+
+    procedure List_Iterate
+      (List    : in List_t;
+       Process : access procedure (Node : in Node_t));
 
   end Internal;
 

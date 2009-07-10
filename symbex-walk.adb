@@ -2,19 +2,18 @@ package body Symbex.Walk is
 
   procedure Walk_Tree
     (Tree   : in     Parse.Tree_t;
-     Status :    out Status_t)
+     Status :    out Walk_Status_t)
   is
     Finish_Tree  : exception;
     Finish_Error : exception;
 
     -- Recursive list walking procedure.
     procedure Walk_List
-      (Tree    : in     Parse.Tree_t;
-       List_ID : in     Parse.List_ID_t;
-       Status  :    out Status_t)
+      (Tree    : in Parse.Tree_t;
+       List_ID : in Parse.List_ID_t)
     is
       procedure Process_List (List : in Parse.List_t) is
-        Current_Status : Status_t;
+        Current_Status : Walk_Status_t;
 
         -- Process node, call handler based on node type.
         procedure Process_Node (Node : in Parse.Node_t) is
@@ -37,8 +36,7 @@ package body Symbex.Walk is
             when Parse.Node_List =>
               Walk_List
                 (Tree    => Tree,
-                 List_ID => List_ID,
-                 Status  => Current_Status);
+                 List_ID => Parse.Internal.Get_List_ID (Node));
           end case;
         end Process_Node;
       begin
@@ -54,9 +52,9 @@ package body Symbex.Walk is
         end case;
 
         -- Iterate over all nodes in list.
-        Parse.Lists.Iterate
-          (Container => List.Nodes,
-           Process   => Process_Node'Access);
+        Parse.Internal.List_Iterate
+          (List    => List,
+           Process => Process_Node'Access);
         case Current_Status is
           when Walk_Continue    => null;
           when Walk_Finish_List => return;
@@ -76,16 +74,15 @@ package body Symbex.Walk is
         end case;
       end Process_List;
     begin
-      List_Arrays.Query_Element
-        (Container => Tree.Lists,
-         Index     => List_ID,
-         Process   => Process_Element'Access);
+      Process_List
+        (Parse.Internal.Get_List
+          (Tree    => Tree,
+           List_ID => List_ID));
     end Walk_List;
   begin
     Walk_List
       (Tree    => Tree,
-       List_ID => Parse.List_ID_t'First,
-       Status  => Status);
+       List_ID => Parse.List_ID_t'First);
   exception
     when Finish_Tree  => Status := Walk_Finish_Tree;
     when Finish_Error => Status := Walk_Error;

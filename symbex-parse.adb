@@ -25,6 +25,37 @@ package body Symbex.Parse is
       end case;
     end Get_Data_ID;
 
+    function Get_List_ID (Node : in Node_t) return List_ID_t is
+    begin
+      case Node.Kind is
+        when Node_List => return Node.List;
+        when others    => raise Constraint_Error with "invalid node type";
+      end case;
+    end Get_List_ID;
+
+    procedure List_Iterate
+      (List    : in List_t;
+       Process : access procedure (Node : in Node_t))
+    is
+      procedure Inner_Process (Cursor : in Lists.Cursor) is
+      begin
+        Lists.Query_Element (Cursor, Process);
+      end Inner_Process;
+    begin
+      Lists.Iterate
+        (Container => List.Nodes,
+         Process   => Inner_Process'Access);
+    end List_Iterate;
+
+    function Get_List
+      (Tree    : in Tree_t;
+       List_ID : in List_ID_t) return List_t is
+    begin
+      return List_Arrays.Element
+        (Container => Tree.Lists,
+         Index     => List_ID);
+    end Get_List;
+
   end Internal;
 
   --
