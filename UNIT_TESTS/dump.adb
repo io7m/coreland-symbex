@@ -62,13 +62,17 @@ procedure Dump is
 
   procedure Handle_List_Open
    (List_ID : in     Parse.List_ID_t;
+    Depth   : in     Natural;
     Status  :    out Walk.Walk_Status_t)
   is
     pragma Assert (List_ID'Valid);
+    pragma Assert (Depth'Valid);
   begin
-    WIO.New_Line;
-    WIO.Put (Fixed."*" (Indent, " ") & "(");
-    Indent := Indent + 2;
+    if Depth > 1 then
+      WIO.New_Line;
+      WIO.Put (Fixed."*" (Indent, " ") & "(");
+      Indent := Indent + 2;
+    end if;
     Status := Walk.Walk_Continue;
   end Handle_List_Open;
 
@@ -98,13 +102,17 @@ procedure Dump is
 
   procedure Handle_List_Close
    (List_ID : in     Parse.List_ID_t;
+    Depth   : in     Natural;
     Status  :    out Walk.Walk_Status_t)
   is
     pragma Assert (List_ID'Valid);
+    pragma Assert (Depth'Valid);
   begin
-    WIO.Put (")");
-    WIO.New_Line;
-    Indent := Indent - 2;
+    if Depth > 1 then
+      WIO.Put (")");
+      WIO.New_Line;
+      Indent := Indent - 2;
+    end if;
     Status := Walk.Walk_Continue;
   end Handle_List_Close;
 

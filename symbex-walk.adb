@@ -6,6 +6,7 @@ package body Symbex.Walk is
   is
     Finish_Tree  : exception;
     Finish_Error : exception;
+    Depth        : Natural := 0;
 
     -- Recursive list walking procedure.
     procedure Walk_List
@@ -21,16 +22,12 @@ package body Symbex.Walk is
           case Parse.Node_Kind (Node) is
             when Parse.Node_Symbol =>
               Handle_Symbol
-                (Name    => Parse.Internal.Get_String
-                  (Tree => Tree,
-                   ID   => Parse.Internal.Get_Data_ID (Node)),
+                (Name    => Parse.Internal.Get_Data (Node),
                  List_ID => List_ID,
                  Status  => Current_Status);
             when Parse.Node_String =>
               Handle_String
-                (Data    => Parse.Internal.Get_String
-                  (Tree => Tree,
-                   ID   => Parse.Internal.Get_Data_ID (Node)),
+                (Data    => Parse.Internal.Get_Data (Node),
                  List_ID => List_ID,
                  Status  => Current_Status);
             when Parse.Node_List =>
@@ -43,6 +40,7 @@ package body Symbex.Walk is
         -- Open list callback.
         Handle_List_Open
           (List_ID => List_ID,
+           Depth   => Depth,
            Status  => Current_Status);
         case Current_Status is
           when Walk_Continue    => null;
@@ -65,6 +63,7 @@ package body Symbex.Walk is
         -- Close list callback.
         Handle_List_Close
           (List_ID => List_ID,
+           Depth   => Depth,
            Status  => Current_Status);
         case Current_Status is
           when Walk_Continue    => null;
@@ -74,10 +73,12 @@ package body Symbex.Walk is
         end case;
       end Process_List;
     begin
+      Depth := Depth + 1;
       Process_List
         (Parse.Internal.Get_List
           (Tree    => Tree,
            List_ID => List_ID));
+      Depth := Depth - 1;
     end Walk_List;
   begin
     Walk_List

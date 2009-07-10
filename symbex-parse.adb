@@ -6,24 +6,15 @@ package body Symbex.Parse is
 
   package body Internal is
 
-    function Get_String
-      (Tree : in Tree_t;
-       ID   : in Node_String_Data_ID_t)
-      return Ada.Strings.Wide_Unbounded.Unbounded_Wide_String is
-    begin
-      return Node_String_Cache_By_Key.Element
-        (Container => Tree.String_Cache,
-         Key       => ID);
-    end Get_String;
-
-    function Get_Data_ID (Node : in Node_t) return Node_String_Data_ID_t is
+    function Get_Data (Node : in Node_t)
+      return UBW_Strings.Unbounded_Wide_String is
     begin
       case Node.Kind is
         when Node_Symbol => return Node.Name;
         when Node_String => return Node.Data;
         when others      => raise Constraint_Error with "invalid node type";
       end case;
-    end Get_Data_ID;
+    end Get_Data;
 
     function Get_List_ID (Node : in Node_t) return List_ID_t is
     begin
@@ -57,53 +48,6 @@ package body Symbex.Parse is
     end Get_List;
 
   end Internal;
-
-  --
-  -- Basic wide string hashing function.
-  --
-
-  function UBW_String_Hash
-    (Item : UBW_Strings.Unbounded_Wide_String) return Ada.Containers.Hash_Type
-  is
-    Temp_Hash : Interfaces.Unsigned_32 := 0;
-  begin
-    for Index in 1 .. UBW_Strings.Length (Item) loop
-      Temp_Hash := Interfaces.Rotate_Left (Temp_Hash, 3) +
-        Wide_Character'Pos (UBW_Strings.Element (Item, Index));
-    end loop;
-
-    return Ada.Containers.Hash_Type (Temp_Hash);
-  end UBW_String_Hash;
-
-  --
-  -- Basic integer hashing function.
-  --
-
-  function Node_String_Cache_ID_Hash
-    (Key : Node_String_Data_ID_t) return Ada.Containers.Hash_Type
-  is
-    Temp_Hash : Interfaces.Unsigned_32 := Interfaces.Unsigned_32 (Key);
-  begin
-    Temp_Hash := (Temp_Hash +   16#7ed55d16#) +   (Interfaces.Rotate_Left (Temp_Hash, 12));
-    Temp_Hash := (Temp_Hash xor 16#c761c23c#) xor (Interfaces.Shift_Right (Temp_Hash, 19));
-    Temp_Hash := (Temp_Hash +   16#165667b1#) +   (Interfaces.Rotate_Left (Temp_Hash, 5));
-    Temp_Hash := (Temp_Hash +   16#d3a2646c#) xor (Interfaces.Rotate_Left (Temp_Hash, 9));
-    Temp_Hash := (Temp_Hash +   16#fd7046c5#) +   (Interfaces.Rotate_Left (Temp_Hash, 3));
-    Temp_Hash := (Temp_Hash xor 16#b55a4f09#) xor (Interfaces.Shift_Right (Temp_Hash, 16));
-
-    return Ada.Containers.Hash_Type (Temp_Hash);
-  end Node_String_Cache_ID_Hash;
-
-  --
-  -- Return ID of Key.
-  -- Hash (Element) = Hash (Key (Element))
-  --
-
-  function Node_String_Cache_ID_Key
-    (Element : UBW_Strings.Unbounded_Wide_String) return Node_String_Data_ID_t is
-  begin
-    return Node_String_Data_ID_t (UBW_String_Hash (Element));
-  end Node_String_Cache_ID_Key;
 
   --
   -- Append Node to list List_ID
@@ -149,27 +93,6 @@ package body Symbex.Parse is
   end Append_List;
 
   --
-  -- Add data to cache, return the new ID of the data element or the ID of
-  -- the matching data element already in the cache.
-  --
-
-  procedure Add_To_Cache
-    (Tree : in out Tree_t;
-     Data : in     UBW_Strings.Unbounded_Wide_String;
-     ID   :    out Node_String_Data_ID_t)
-  is
-    Cursor   : Node_String_Cache.Cursor;
-    Inserted : Boolean;
-  begin
-    Node_String_Cache.Insert
-      (Container => Tree.String_Cache,
-       New_Item  => Data,
-       Position  => Cursor,
-       Inserted  => Inserted);
-    ID := Node_String_Cache_By_Key.Key (Cursor);
-  end Add_To_Cache;
-
-  --
   -- Token processors.
   --
 
@@ -184,11 +107,7 @@ package body Symbex.Parse is
     Current_List : List_ID_t;
     Node         : Node_t (Kind => Node_String);
   begin
-    -- Add data to cache.
-    Add_To_Cache
-      (Tree => Tree,
-       Data => Token.Text,
-       ID   => Node.Data);
+    Node.Data := Token.Text;
 
     -- Fetch current list.
     List_ID_Stack.Peek
@@ -213,11 +132,7 @@ package body Symbex.Parse is
     Current_List : List_ID_t;
     Node         : Node_t (Kind => Node_Symbol);
   begin
-    -- Add data to cache.
-    Add_To_Cache
-      (Tree => Tree,
-       Data => Token.Text,
-       ID   => Node.Name);
+    Node.Name := Token.Text;
 
     -- Fetch current list.
     List_ID_Stack.Peek
@@ -342,7 +257,6 @@ package body Symbex.Parse is
        Completed    => False,
        List_Stack   => <>,
        Lists        => <>,
-       String_Cache => <>,
        Current_List => List_ID_t'First);
 
     Add_Root_List (Tree);

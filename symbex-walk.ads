@@ -11,6 +11,7 @@ package Symbex.Walk is
   generic
     with procedure Handle_List_Open
       (List_ID : in     Parse.List_ID_t;
+       Depth   : in     Natural;
        Status  :    out Walk_Status_t);
 
     with procedure Handle_Symbol
@@ -25,6 +26,7 @@ package Symbex.Walk is
 
     with procedure Handle_List_Close
       (List_ID : in     Parse.List_ID_t;
+       Depth   : in     Natural;
        Status  :    out Walk_Status_t);
 
   procedure Walk_Tree
