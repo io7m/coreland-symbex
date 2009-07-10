@@ -90,6 +90,7 @@ procedure Dump is
     pragma Assert (List_Length'Valid);
   begin
     WUIO.Put (Name);
+
     if Parse.List_Length_t (List_Position) /= List_Length then
       WIO.Put (" ");
     end if;
@@ -107,7 +108,10 @@ procedure Dump is
     pragma Assert (List_Position'Valid);
     pragma Assert (List_Length'Valid);
   begin
+    WIO.Put ("""");
     WUIO.Put (Data);
+    WIO.Put ("""");
+
     if Parse.List_Length_t (List_Position) /= List_Length then
       WIO.Put (" ");
     end if;
