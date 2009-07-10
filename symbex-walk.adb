@@ -46,7 +46,7 @@ package body Symbex.Walk is
           Position := Position + 1;
         end Process_Node;
       begin
-        Length   := Parse.Internal.Get_List_Length (List);
+        Length   := Parse.List_Length (List);
         Position := Parse.List_Position_t'First;
 
         -- Open list callback.

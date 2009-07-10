@@ -50,6 +50,9 @@ package Symbex.Parse is
   type List_Position_t is new Positive;
   type List_Depth_t    is new Natural;
 
+  -- Retrieve number of nodes in list.
+  function List_Length (List : in List_t) return List_Length_t;
+
   --
   -- Status values corresponding to error conditions.
   --
@@ -124,12 +127,6 @@ package Symbex.Parse is
       (Tree    : in Tree_t;
        List_ID : in List_ID_t) return List_t;
     pragma Precondition (Completed (Tree));
-
-    --
-    -- Retrieve list length.
-    --
-
-    function Get_List_Length (List : in List_t) return List_Length_t;
 
     --
     -- Iterate over nodes in list.

@@ -24,11 +24,6 @@ package body Symbex.Parse is
       end case;
     end Get_List_ID;
 
-    function Get_List_Length (List : in List_t) return List_Length_t is
-    begin
-      return List_Length_t (Lists.Length (List.Nodes));
-    end Get_List_Length;
-
     procedure List_Iterate
       (List    : in List_t;
        Process : access procedure (Node : in Node_t))
@@ -311,5 +306,14 @@ package body Symbex.Parse is
   begin
     return Node.Kind;
   end Node_Kind;
+
+  --
+  -- List accessors.
+  --
+
+  function List_Length (List : in List_t) return List_Length_t is
+  begin
+    return List_Length_t (Lists.Length (List.Nodes));
+  end List_Length;
 
 end Symbex.Parse;
