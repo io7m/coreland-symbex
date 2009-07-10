@@ -13,8 +13,12 @@ package body Symbex.Walk is
       (Tree    : in Parse.Tree_t;
        List_ID : in Parse.List_ID_t)
     is
+      use type Parse.List_Position_t;
+
       procedure Process_List (List : in Parse.List_t) is
         Current_Status : Walk_Status_t;
+        Length         : Parse.List_Length_t;
+        Position       : Parse.List_Position_t;
 
         -- Process node, call handler based on node type.
         procedure Process_Node (Node : in Parse.Node_t) is
@@ -22,25 +26,33 @@ package body Symbex.Walk is
           case Parse.Node_Kind (Node) is
             when Parse.Node_Symbol =>
               Handle_Symbol
-                (Name    => Parse.Internal.Get_Data (Node),
-                 List_ID => List_ID,
-                 Status  => Current_Status);
+                (Name          => Parse.Internal.Get_Data (Node),
+                 List_ID       => List_ID,
+                 List_Position => Position,
+                 List_Length   => Length,
+                 Status        => Current_Status);
             when Parse.Node_String =>
               Handle_String
-                (Data    => Parse.Internal.Get_Data (Node),
-                 List_ID => List_ID,
-                 Status  => Current_Status);
+                (Data          => Parse.Internal.Get_Data (Node),
+                 List_ID       => List_ID,
+                 List_Position => Position,
+                 List_Length   => Length,
+                 Status        => Current_Status);
             when Parse.Node_List =>
               Walk_List
                 (Tree    => Tree,
                  List_ID => Parse.Internal.Get_List_ID (Node));
           end case;
+          Position := Position + 1;
         end Process_Node;
       begin
+        Length   := Parse.Internal.Get_List_Length (List);
+        Position := Parse.List_Position_t'First;
+
         -- Open list callback.
         Handle_List_Open
           (List_ID => List_ID,
-           Depth   => Depth,
+           Depth   => Parse.List_Depth_t (Depth),
            Status  => Current_Status);
         case Current_Status is
           when Walk_Continue    => null;
@@ -63,7 +75,7 @@ package body Symbex.Walk is
         -- Close list callback.
         Handle_List_Close
           (List_ID => List_ID,
-           Depth   => Depth,
+           Depth   => Parse.List_Depth_t (Depth),
            Status  => Current_Status);
         case Current_Status is
           when Walk_Continue    => null;

@@ -21,6 +21,8 @@ procedure Dump is
   use type Lex.Lexer_t;
   use type Lex.Token_Kind_t;
   use type Parse.Tree_Status_t;
+  use type Parse.List_Depth_t;
+  use type Parse.List_Length_t;
   use type Walk.Walk_Status_t;
 
   Done         : Boolean;
@@ -62,7 +64,7 @@ procedure Dump is
 
   procedure Handle_List_Open
    (List_ID : in     Parse.List_ID_t;
-    Depth   : in     Natural;
+    Depth   : in     Parse.List_Depth_t;
     Status  :    out Walk.Walk_Status_t)
   is
     pragma Assert (List_ID'Valid);
@@ -77,32 +79,44 @@ procedure Dump is
   end Handle_List_Open;
 
   procedure Handle_Symbol
-   (Name    : in     Parse.Node_Symbol_Name_t;
-    List_ID : in     Parse.List_ID_t;
-    Status  :    out Walk.Walk_Status_t)
+   (Name          : in     Parse.Node_Symbol_Name_t;
+    List_ID       : in     Parse.List_ID_t;
+    List_Position : in     Parse.List_Position_t;
+    List_Length   : in     Parse.List_Length_t;
+    Status        :    out Walk.Walk_Status_t)
   is
     pragma Assert (List_ID'Valid);
+    pragma Assert (List_Position'Valid);
+    pragma Assert (List_Length'Valid);
   begin
     WUIO.Put (Name);
-    WIO.Put (" ");
+    if Parse.List_Length_t (List_Position) /= List_Length then
+      WIO.Put (" ");
+    end if;
     Status := Walk.Walk_Continue;
   end Handle_Symbol;
 
   procedure Handle_String
-    (Data    : in     Parse.Node_String_Data_t;
-     List_ID : in     Parse.List_ID_t;
-     Status  :    out Walk.Walk_Status_t)
+    (Data          : in     Parse.Node_String_Data_t;
+     List_ID       : in     Parse.List_ID_t;
+     List_Position : in     Parse.List_Position_t;
+     List_Length   : in     Parse.List_Length_t;
+     Status        :    out Walk.Walk_Status_t)
   is
     pragma Assert (List_ID'Valid);
+    pragma Assert (List_Position'Valid);
+    pragma Assert (List_Length'Valid);
   begin
     WUIO.Put (Data);
-    WIO.Put (" ");
+    if Parse.List_Length_t (List_Position) /= List_Length then
+      WIO.Put (" ");
+    end if;
     Status := Walk.Walk_Continue;
   end Handle_String;
 
   procedure Handle_List_Close
    (List_ID : in     Parse.List_ID_t;
-    Depth   : in     Natural;
+    Depth   : in     Parse.List_Depth_t;
     Status  :    out Walk.Walk_Status_t)
   is
     pragma Assert (List_ID'Valid);

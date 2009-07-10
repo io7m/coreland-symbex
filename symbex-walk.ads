@@ -11,22 +11,26 @@ package Symbex.Walk is
   generic
     with procedure Handle_List_Open
       (List_ID : in     Parse.List_ID_t;
-       Depth   : in     Natural;
+       Depth   : in     Parse.List_Depth_t;
        Status  :    out Walk_Status_t);
 
     with procedure Handle_Symbol
-      (Name    : in     Parse.Node_Symbol_Name_t;
-       List_ID : in     Parse.List_ID_t;
-       Status  :    out Walk_Status_t);
+      (Name          : in     Parse.Node_Symbol_Name_t;
+       List_ID       : in     Parse.List_ID_t;
+       List_Position : in     Parse.List_Position_t;
+       List_Length   : in     Parse.List_Length_t;
+       Status        :    out Walk_Status_t);
 
     with procedure Handle_String
-      (Data    : in     Parse.Node_String_Data_t;
-       List_ID : in     Parse.List_ID_t;
-       Status  :    out Walk_Status_t);
+      (Data          : in     Parse.Node_String_Data_t;
+       List_ID       : in     Parse.List_ID_t;
+       List_Position : in     Parse.List_Position_t;
+       List_Length   : in     Parse.List_Length_t;
+       Status        :    out Walk_Status_t);
 
     with procedure Handle_List_Close
       (List_ID : in     Parse.List_ID_t;
-       Depth   : in     Natural;
+       Depth   : in     Parse.List_Depth_t;
        Status  :    out Walk_Status_t);
 
   procedure Walk_Tree

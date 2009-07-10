@@ -45,7 +45,10 @@ package Symbex.Parse is
   type List_t is private;
 
   -- Unique list identifier.
-  type List_ID_t is new Positive;
+  type List_ID_t       is new Positive;
+  type List_Length_t   is new Natural;
+  type List_Position_t is new Positive;
+  type List_Depth_t    is new Natural;
 
   --
   -- Status values corresponding to error conditions.
@@ -123,6 +126,12 @@ package Symbex.Parse is
     pragma Precondition (Completed (Tree));
 
     --
+    -- Retrieve list length.
+    --
+
+    function Get_List_Length (List : in List_t) return List_Length_t;
+
+    --
     -- Iterate over nodes in list.
     --
 
@@ -149,7 +158,7 @@ private
   --
 
   package Lists is new Ada.Containers.Vectors
-    (Index_Type   => Positive,
+    (Index_Type   => List_Position_t,
      Element_Type => Node_t);
 
   subtype List_Nodes_t is Lists.Vector;
