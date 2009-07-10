@@ -18,6 +18,10 @@ package Symbex.Parse is
      Tree_Error_Excess_Closing_Parentheses,
      Tree_Error_Unterminated_List);
 
+  -- Status values corresponding to error conditions.
+  subtype Tree_Error_Status_t is Tree_Status_t
+    range Tree_Error_Excess_Closing_Parentheses .. Tree_Status_t'Last;
+
   --
   -- Tree node types.
   --
@@ -52,13 +56,6 @@ package Symbex.Parse is
 
   -- Retrieve number of nodes in list.
   function List_Length (List : in List_t) return List_Length_t;
-
-  --
-  -- Status values corresponding to error conditions.
-  --
-
-  subtype Tree_Error_Status_t is Tree_Status_t
-    range Tree_Error_Excess_Closing_Parentheses .. Tree_Status_t'Last;
 
   --
   -- Tree is initialized?
