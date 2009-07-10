@@ -8,6 +8,12 @@ UNIT_TESTS/lexer.ali UNIT_TESTS/lexer.o UNIT_TESTS/parser UNIT_TESTS/parser.ali 
 UNIT_TESTS/parser.o symbex-lex.ali symbex-lex.o symbex-parse.ali symbex-parse.o \
 symbex-walk.ali symbex-walk.o symbex.a symbex.ali symbex.o
 
+# Mkf-test
+tests:
+	(cd UNIT_TESTS && make)
+tests_clean:
+	(cd UNIT_TESTS && make clean)
+
 # -- SYSDEPS start
 flags-stack-ada:
 	@echo SYSDEPS stack-ada-flags run create flags-stack-ada 
@@ -175,7 +181,7 @@ ada-compile symbex.ads symbex.ads
 symbex.o:\
 symbex.ali
 
-clean-all: sysdeps_clean obj_clean ext_clean
+clean-all: sysdeps_clean tests_clean obj_clean ext_clean
 clean: obj_clean
 obj_clean:
 	rm -f UNIT_TESTS/dump UNIT_TESTS/dump.ali UNIT_TESTS/dump.o UNIT_TESTS/lexer \
